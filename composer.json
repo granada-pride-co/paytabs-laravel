@@ -1,0 +1,25 @@
+{
+    "name": "granada-pride/paytabs",
+    "description": "This provide  integration with the PayTabs payment gateway",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "GranadaPride\\Paytabs\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "GranadaPride\\Paytabs\\PaytabsServiceProvider"
+            ]
+        }
+    },
+    "authors": [
+        {
+            "name": "Hussein Gaber",
+            "email": "148823784+hussaingaber@users.noreply.github.com"
+        }
+    ],
+    "minimum-stability": "dev"
+}
