@@ -4,49 +4,34 @@ declare(strict_types=1);
 
 namespace GranadaPride\Paytabs;
 
+use Exception;
+use GranadaPride\Paytabs\DTO\CustomerDetails;
+use GranadaPride\Paytabs\DTO\ShippingDetails;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
+use RuntimeException;
 
 class Paytabs
 {
+    private string $currency;
+
+    private string $serverKey;
+
+    private string $profileId;
+
+    private string $region;
+
     protected string $cartId;
 
     protected float $cartAmount;
 
     protected string $cartDescription;
 
-    protected string $customerName;
+    protected CustomerDetails $customerDetails;
 
-    protected string $customerPhone;
-
-    protected string $customerEmail;
-
-    protected string $customerStreet;
-
-    protected string $customerCity;
-
-    protected string $customerState;
-
-    protected string $customerCountry;
-
-    protected string $customerZipCode;
-
-    protected string $shippingName;
-
-    protected string $shippingPhone;
-
-    protected string $shippingEmail;
-
-    protected string $shippingStreet;
-
-    protected string $shippingCity;
-
-    protected string $shippingState;
-
-    protected string $shippingCountry;
-
-    protected string $shippingZipCode;
+    protected ShippingDetails $shippingDetails;
 
     protected string $callbackUrl;
 
@@ -56,15 +41,25 @@ class Paytabs
 
     protected bool $hideShipping = false;
 
-    public function __construct() {}
+    public function __construct()
+    {
+        $this->currency = config('paytabs.currency');
+        $this->serverKey = config('paytabs.server_key');
+        $this->profileId = config('paytabs.profile_id');
+        $this->region = config('paytabs.region');
+    }
 
     public static function make(): static
     {
         return new static;
     }
 
-    public function setCart($cartId, $cartAmount, $cartDescription): static
+    public function setCart(string $cartId, float $cartAmount, string $cartDescription): static
     {
+        if ($cartAmount <= 0) {
+            throw new InvalidArgumentException('Cart amount must be greater than zero.');
+        }
+
         $this->cartId = $cartId;
         $this->cartAmount = $cartAmount;
         $this->cartDescription = $cartDescription;
@@ -78,80 +73,32 @@ class Paytabs
             'cart_id' => $this->cartId,
             'cart_amount' => $this->cartAmount,
             'cart_description' => $this->cartDescription,
-            'cart_currency' => config('paytabs.currency'),
+            'cart_currency' => $this->currency,
         ];
     }
 
-    public function setCustomer(
-        $customerName,
-        $customerPhone,
-        $customerEmail,
-        $customerStreet,
-        $customerCity,
-        $customerState,
-        $customerCountry,
-        $customerZipCode
-    ): static {
-        $this->customerName = $customerName;
-        $this->customerPhone = $customerPhone;
-        $this->customerEmail = $customerEmail;
-        $this->customerStreet = $customerStreet;
-        $this->customerCity = $customerCity;
-        $this->customerState = $customerState;
-        $this->customerCountry = $customerCountry;
-        $this->customerZipCode = $customerZipCode;
+    public function setCustomer(CustomerDetails $details): static
+    {
+        $this->customerDetails = $details;
 
         return $this;
     }
 
     public function getCustomer(): array
     {
-        return [
-            'name' => $this->customerName,
-            'phone' => $this->customerPhone,
-            'email' => $this->customerEmail,
-            'street1' => $this->customerStreet,
-            'city' => $this->customerCity,
-            'state' => $this->customerState,
-            'country' => $this->customerCountry,
-            'zip' => $this->customerZipCode,
-        ];
+        return $this->customerDetails->toArray();
     }
 
-    public function setShipping(
-        $shippingName,
-        $shippingPhone,
-        $shippingEmail,
-        $shippingStreet,
-        $shippingCity,
-        $shippingState,
-        $shippingCountry,
-        $shippingZipCode
-    ): static {
-        $this->shippingName = $shippingName;
-        $this->shippingPhone = $shippingPhone;
-        $this->shippingEmail = $shippingEmail;
-        $this->shippingStreet = $shippingStreet;
-        $this->shippingCity = $shippingCity;
-        $this->shippingState = $shippingState;
-        $this->shippingCountry = $shippingCountry;
-        $this->shippingZipCode = $shippingZipCode;
+    public function setShipping(ShippingDetails $details): static
+    {
+        $this->shippingDetails = $details;
 
         return $this;
     }
 
     public function getShipping(): array
     {
-        return [
-            'name' => $this->shippingName,
-            'phone' => $this->shippingPhone,
-            'email' => $this->shippingEmail,
-            'street1' => $this->shippingStreet,
-            'city' => $this->shippingCity,
-            'state' => $this->shippingState,
-            'country' => $this->shippingCountry,
-            'zip' => $this->shippingZipCode,
-        ];
+        return $this->shippingDetails->toArray();
     }
 
     public function setCallbackUrl(string $callbackUrl): static
@@ -205,21 +152,25 @@ class Paytabs
     protected function initialize(): PendingRequest
     {
         return Http::withHeaders([
-            'authorization' => config('paytabs.server_key'),
+            'authorization' => $this->serverKey,
         ])->baseUrl($this->getBaseUrl());
     }
 
     public function paypage()
     {
-        return $this->initialize()
-            ->post('payment/request', $this->paypagePayload())
-            ->json();
+        try {
+            return $this->initialize()
+                ->post('payment/request', $this->paypagePayload())
+                ->json();
+        } catch (Exception $e) {
+            throw new RuntimeException('Failed to create PayTabs payment page: '.$e->getMessage());
+        }
     }
 
     protected function paypagePayload(): array
     {
         return [
-            'profile_id' => intval(config('paytabs.profile_id')),
+            'profile_id' => intval($this->profileId),
             'tran_type' => 'sale',
             'tran_class' => 'ecom',
             'paypage_lang' => $this->paypageLang,
@@ -229,20 +180,18 @@ class Paytabs
                 'udf3' => 'UDF3 Test3',
                 'udf9' => 'UDF9 Test9',
             ],
-            'hide_shipping' => $this->hideShipping,
-            'customer_details' => [
-                ...$this->getCustomer(),
-            ],
-            'shipping_details' => [
-                ...$this->getShipping(),
-            ],
-            ...$this->getCart(),
+            'customer_details' => $this->getCustomer(),
+            'shipping_details' => $this->getShipping(),
+            'cart_id' => $this->cartId,
+            'cart_amount' => $this->cartAmount,
+            'cart_description' => $this->cartDescription,
+            'cart_currency' => $this->currency,
         ];
     }
 
     protected function getBaseUrl(): string
     {
-        $region = Str::upper(config('paytabs.region'));
+        $region = Str::upper($this->region);
 
         return match ($region) {
             'ARE' => 'https://secure.paytabs.com',
@@ -253,6 +202,7 @@ class Paytabs
             'IRQ' => 'https://secure-iraq.paytabs.com',
             'PSE' => 'https://secure-palestine.paytabs.com',
             'GLOBAL' => 'https://secure-global.paytabs.com',
+            default => throw new InvalidArgumentException("Unsupported region: $region"),
         };
     }
 }

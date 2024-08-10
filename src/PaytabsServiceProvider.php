@@ -23,6 +23,6 @@ class PaytabsServiceProvider extends ServiceProvider
     {
         $this->publishes([
             __DIR__.'/config/paytabs.php' => config_path('paytabs.php'),
-        ]);
+        ], 'paytabs-config');
     }
 }
