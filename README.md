@@ -36,7 +36,6 @@ php artisan vendor:publish --tag=granada-pride-paytabs-config
 ``` php
 use GranadaPride\Paytabs\Paytabs;
 use GranadaPride\Paytabs\DTO\CustomerDetails;
-use GranadaPride\Paytabs\DTO\ShippingDetails;
 
 $paytabs = Paytabs::make();
 
@@ -57,8 +56,11 @@ $customerDetails = new CustomerDetails(
 
 $paytabs->setCustomer($customerDetails);
 
-// Set Shipping Information using the ShippingDetails DTO
-$shippingDetails = new ShippingDetails(
+// Option 1: Use Customer Information for Shipping if it's the same
+$paytabs->useCustomerForShipping();
+
+// Option 2: Set Shipping Information separately if it's different
+$shippingDetails = new CustomerDetails(
     name: 'Jane Doe',
     phone: '+987654321',
     email: 'janedoe@example.com',
@@ -80,5 +82,16 @@ $paytabs->setCallbackUrl('https://yourdomain.com/callback')
 $response = $paytabs->paypage();
 
 // Handle the response
+dd($response);
+```
+
+## Query Transaction
+
+```php
+use GranadaPride\Paytabs\Paytabs;
+
+$response = Paytabs::make()
+    ->queryTransaction('TST2422201903602');
+
 dd($response);
 ```

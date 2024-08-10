@@ -6,7 +6,6 @@ namespace GranadaPride\Paytabs;
 
 use Exception;
 use GranadaPride\Paytabs\DTO\CustomerDetails;
-use GranadaPride\Paytabs\DTO\ShippingDetails;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -31,7 +30,7 @@ class Paytabs
 
     protected CustomerDetails $customerDetails;
 
-    protected ShippingDetails $shippingDetails;
+    protected CustomerDetails $shippingDetails;
 
     protected string $callbackUrl;
 
@@ -89,7 +88,7 @@ class Paytabs
         return $this->customerDetails->toArray();
     }
 
-    public function setShipping(ShippingDetails $details): static
+    public function setShipping(CustomerDetails $details): static
     {
         $this->shippingDetails = $details;
 
@@ -99,6 +98,13 @@ class Paytabs
     public function getShipping(): array
     {
         return $this->shippingDetails->toArray();
+    }
+
+    public function useCustomerForShipping(): static
+    {
+        $this->shippingDetails = $this->customerDetails;
+
+        return $this;
     }
 
     public function setCallbackUrl(string $callbackUrl): static
@@ -164,6 +170,19 @@ class Paytabs
                 ->json();
         } catch (Exception $e) {
             throw new RuntimeException('Failed to create PayTabs payment page: '.$e->getMessage());
+        }
+    }
+
+    public function queryTransaction(string $transactionReference)
+    {
+        try {
+            $this->initialize()
+                ->post('payment/query', [
+                    'profile_id' => intval($this->profileId),
+                    'tran_ref' => $transactionReference,
+                ])->json();
+        } catch (Exception $e) {
+            throw new RuntimeException('Failed to fetch PayTabs query transaction: '.$e->getMessage());
         }
     }
 
