@@ -7,7 +7,7 @@ PayTabs Payment Gateway Integration with Laravel Framework
 You can install the package via composer:
 
 ```bash
-composer require granada-pride/paytabs
+composer require granada-pride/paytabs:^2.0
 ```
 
 ## Configuration
