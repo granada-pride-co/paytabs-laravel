@@ -15,14 +15,14 @@ class PaytabsServiceProvider extends ServiceProvider
         });
 
         $this->mergeConfigFrom(
-            __DIR__.'/config/paytabs.php', 'paytabs'
+            __DIR__ . '/../config/paytabs.php', 'paytabs'
         );
     }
 
     public function boot(): void
     {
         $this->publishes([
-            __DIR__.'/config/paytabs.php' => config_path('paytabs.php'),
-        ], 'paytabs-config');
+            __DIR__ . '/../config/paytabs.php' => config_path('paytabs.php'),
+        ], 'paytabs');
     }
 }
