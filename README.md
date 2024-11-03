@@ -1,3 +1,5 @@
+[![Github All Releases](https://img.shields.io/packagist/dt/granada-pride/paytabs)]()
+
 # PayTabs Payment Gateway Integration for Laravel
 
 ## Table of Contents
