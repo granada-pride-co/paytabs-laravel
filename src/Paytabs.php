@@ -14,13 +14,7 @@ use RuntimeException;
 
 class Paytabs
 {
-    private string $currency;
 
-    private string $serverKey;
-
-    private string $profileId;
-
-    private string $region;
 
     protected string $cartId;
 
@@ -40,12 +34,16 @@ class Paytabs
 
     protected bool $hideShipping = false;
 
-    public function __construct()
+    public function __construct(
+        private ?string $currency = null,
+        private ?string $serverKey = null,
+        private ?string $profileId = null,
+        private ?string $region = null)
     {
-        $this->currency = config('paytabs.currency');
-        $this->serverKey = config('paytabs.server_key');
-        $this->profileId = config('paytabs.profile_id');
-        $this->region = config('paytabs.region');
+        $this->currency = $currency ?? config('paytabs.currency');
+        $this->serverKey = $serverKey ?? config('paytabs.server_key');
+        $this->profileId = $profileId ?? config('paytabs.profile_id');
+        $this->region = $region ?? config('paytabs.region');
     }
 
     public static function make(): static
@@ -83,21 +81,11 @@ class Paytabs
         return $this;
     }
 
-    public function getCustomer(): array
-    {
-        return $this->customerDetails->toArray();
-    }
-
     public function setShipping(CustomerDetails $details): static
     {
         $this->shippingDetails = $details;
 
         return $this;
-    }
-
-    public function getShipping(): array
-    {
-        return $this->shippingDetails->toArray();
     }
 
     public function useCustomerForShipping(): static
@@ -107,21 +95,14 @@ class Paytabs
         return $this;
     }
 
-    public function setCallbackUrl(string $callbackUrl): static
-    {
-        $this->callbackUrl = $callbackUrl;
-
-        return $this;
-    }
-
     public function getCallbackUrl(): string
     {
         return $this->callbackUrl;
     }
 
-    public function setReturnUrl(string $returnUrl): static
+    public function setCallbackUrl(string $callbackUrl): static
     {
-        $this->returnUrl = $returnUrl;
+        $this->callbackUrl = $callbackUrl;
 
         return $this;
     }
@@ -131,9 +112,9 @@ class Paytabs
         return $this->returnUrl;
     }
 
-    public function setPaypageLang(string $paypageLang): static
+    public function setReturnUrl(string $returnUrl): static
     {
-        $this->paypageLang = $paypageLang;
+        $this->returnUrl = $returnUrl;
 
         return $this;
     }
@@ -143,9 +124,9 @@ class Paytabs
         return $this->paypageLang;
     }
 
-    public function setHideShipping(bool $hide): static
+    public function setPaypageLang(string $paypageLang): static
     {
-        $this->hideShipping = $hide;
+        $this->paypageLang = $paypageLang;
 
         return $this;
     }
@@ -155,11 +136,11 @@ class Paytabs
         return $this->hideShipping;
     }
 
-    protected function initialize(): PendingRequest
+    public function setHideShipping(bool $hide): static
     {
-        return Http::withHeaders([
-            'authorization' => $this->serverKey,
-        ])->baseUrl($this->getBaseUrl());
+        $this->hideShipping = $hide;
+
+        return $this;
     }
 
     public function paypage()
@@ -169,21 +150,32 @@ class Paytabs
                 ->post('payment/request', $this->paypagePayload())
                 ->json();
         } catch (Exception $e) {
-            throw new RuntimeException('Failed to create PayTabs payment page: '.$e->getMessage());
+            throw new RuntimeException('Failed to create PayTabs payment page: ' . $e->getMessage());
         }
     }
 
-    public function queryTransaction(string $transactionReference)
+    protected function initialize(): PendingRequest
     {
-        try {
-            return $this->initialize()
-                ->post('payment/query', [
-                    'profile_id' => intval($this->profileId),
-                    'tran_ref' => $transactionReference,
-                ])->json();
-        } catch (Exception $e) {
-            throw new RuntimeException('Failed to fetch PayTabs query transaction: '.$e->getMessage());
-        }
+        return Http::withHeaders([
+            'authorization' => $this->serverKey,
+        ])->baseUrl($this->getBaseUrl());
+    }
+
+    protected function getBaseUrl(): string
+    {
+        $region = Str::upper($this->region);
+
+        return match ($region) {
+            'ARE' => 'https://secure.paytabs.com',
+            'SAU' => 'https://secure.paytabs.sa',
+            'OMN' => 'https://secure-oman.paytabs.com',
+            'JOR' => 'https://secure-jordan.paytabs.com',
+            'EGY' => 'https://secure-egypt.paytabs.com',
+            'IRQ' => 'https://secure-iraq.paytabs.com',
+            'PSE' => 'https://secure-palestine.paytabs.com',
+            'GLOBAL' => 'https://secure-global.paytabs.com',
+            default => throw new InvalidArgumentException("Unsupported region: $region"),
+        };
     }
 
     protected function paypagePayload(): array
@@ -208,20 +200,26 @@ class Paytabs
         ];
     }
 
-    protected function getBaseUrl(): string
+    public function getCustomer(): array
     {
-        $region = Str::upper($this->region);
+        return $this->customerDetails->toArray();
+    }
 
-        return match ($region) {
-            'ARE' => 'https://secure.paytabs.com',
-            'SAU' => 'https://secure.paytabs.sa',
-            'OMN' => 'https://secure-oman.paytabs.com',
-            'JOR' => 'https://secure-jordan.paytabs.com',
-            'EGY' => 'https://secure-egypt.paytabs.com',
-            'IRQ' => 'https://secure-iraq.paytabs.com',
-            'PSE' => 'https://secure-palestine.paytabs.com',
-            'GLOBAL' => 'https://secure-global.paytabs.com',
-            default => throw new InvalidArgumentException("Unsupported region: $region"),
-        };
+    public function getShipping(): array
+    {
+        return $this->shippingDetails->toArray();
+    }
+
+    public function queryTransaction(string $transactionReference)
+    {
+        try {
+            return $this->initialize()
+                ->post('payment/query', [
+                    'profile_id' => intval($this->profileId),
+                    'tran_ref' => $transactionReference,
+                ])->json();
+        } catch (Exception $e) {
+            throw new RuntimeException('Failed to fetch PayTabs query transaction: ' . $e->getMessage());
+        }
     }
 }
