@@ -15,7 +15,6 @@ use RuntimeException;
 class Paytabs
 {
 
-
     protected string $cartId;
 
     protected float $cartAmount;
@@ -33,6 +32,15 @@ class Paytabs
     protected string $paypageLang;
 
     protected bool $hideShipping = false;
+
+    protected bool $framed = false;
+
+    protected bool $framedReturnTop = false;
+
+    protected bool $framedReturnParent = false;
+
+    protected string $framedMessageTarget;
+
 
     public function __construct(
         private ?string $currency = null,
@@ -197,6 +205,10 @@ class Paytabs
             'cart_amount' => $this->cartAmount,
             'cart_description' => $this->cartDescription,
             'cart_currency' => $this->currency,
+            'framed' => $this->framed,
+            'framed_return_top' => $this->framedReturnTop,
+            'framed_return_parent' => $this->framedReturnParent,
+            'framed_message_target' => $this->framedMessageTarget,
         ];
     }
 
@@ -221,5 +233,15 @@ class Paytabs
         } catch (Exception $e) {
             throw new RuntimeException('Failed to fetch PayTabs query transaction: ' . $e->getMessage());
         }
+    }
+
+    public function displayIFrame(): static
+    {
+        $this->framed = true;
+        $this->framedReturnTop = true;
+        $this->framedReturnParent = true;
+        $this->framedMessageTarget = config('paytabs.iframe_message_target');;
+
+        return $this;
     }
 }

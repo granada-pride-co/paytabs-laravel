@@ -46,6 +46,7 @@ return [
     'server_key' => env('PAYTABS_SERVER_KEY'),
     'currency' => env('PAYTABS_CURRENCY'),
     'region' => env('PAYTABS_REGION'),
+    'iframe_message_target' => env('PAYTABS_IFRAME_MESSAGE_TARGET'),
 ];
 ```
 
@@ -106,6 +107,11 @@ $paytabs->setShipping($shippingDetails);
 $paytabs->setCallbackUrl('https://yourdomain.com/callback')
         ->setReturnUrl('https://yourdomain.com/return')
         ->setPaypageLang('en');
+        
+// To display IFrame
+$paytabs->displayIFrame();
+
+// and you sholud update your .env with PAYTABS_IFRAME_MESSAGE_TARGET this A valid HTTPS website URL of your domain (the recipient) that will receive the event. In order for the event to be dispatched, this domain must match exactly (including scheme, hostname, and port).
 
 // Generate Payment Page
 $response = $paytabs->paypage();
