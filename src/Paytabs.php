@@ -39,7 +39,7 @@ class Paytabs
 
     protected bool $framedReturnParent = false;
 
-    protected string $framedMessageTarget;
+    protected ?string $framedMessageTarget = null;
 
 
     public function __construct(
@@ -188,7 +188,7 @@ class Paytabs
 
     protected function paypagePayload(): array
     {
-        return [
+        $payload = [
             'profile_id' => intval($this->profileId),
             'tran_type' => 'sale',
             'tran_class' => 'ecom',
@@ -208,8 +208,13 @@ class Paytabs
             'framed' => $this->framed,
             'framed_return_top' => $this->framedReturnTop,
             'framed_return_parent' => $this->framedReturnParent,
-            'framed_message_target' => $this->framedMessageTarget,
         ];
+
+        if ($this->framedMessageTarget !== null) {
+            $payload['framed_message_target'] = $this->framedMessageTarget;
+        }
+
+        return $payload;
     }
 
     public function getCustomer(): array
