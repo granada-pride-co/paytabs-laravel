@@ -50,16 +50,4 @@ return [
 
     'region' => env('PAYTABS_REGION'),
 
-    /*
-    |--------------------------------------------------------------------------
-    | IFrame Message Target
-    |--------------------------------------------------------------------------
-    |
-    | A valid HTTPS website URL of your domain (the recipient) that will receive the event.
-    | In order for the event to be dispatched,
-    | this domain must match exactly (including scheme, hostname, and port).
-    |
-    */
-
-    'iframe_message_target' => env('PAYTABS_IFRAME_MESSAGE_TARGET'),
 ];
