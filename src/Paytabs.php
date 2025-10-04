@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use RuntimeException;
+use function LaravelIdea\throw_if;
 
 class Paytabs
 {
@@ -21,9 +22,9 @@ class Paytabs
 
     protected string $cartDescription;
 
-    protected CustomerDetails $customerDetails;
+    protected CustomerDetails|null $customerDetails;
 
-    protected CustomerDetails $shippingDetails;
+    protected CustomerDetails|null $shippingDetails;
 
     protected string $callbackUrl;
 
@@ -194,13 +195,10 @@ class Paytabs
             'tran_class' => 'ecom',
             'paypage_lang' => $this->paypageLang,
             'callback' => $this->callbackUrl,
-            'return' => $this->returnUrl,
             'user_defined' => [
                 'udf3' => 'UDF3 Test3',
                 'udf9' => 'UDF9 Test9',
             ],
-            'customer_details' => $this->getCustomer(),
-            'shipping_details' => $this->getShipping(),
             'cart_id' => $this->cartId,
             'cart_amount' => $this->cartAmount,
             'cart_description' => $this->cartDescription,
@@ -208,10 +206,18 @@ class Paytabs
             'framed' => $this->framed,
             'framed_return_top' => $this->framedReturnTop,
             'framed_return_parent' => $this->framedReturnParent,
+            'return' => $this->returnUrl,
         ];
+        if ($this->customerDetails) {
+            $payload['customer_details'] = $this->getCustomer();
+        }
+        if ($this->shippingDetails) {
+            $payload['shipping_details'] = $this->getShipping();
+        }
 
         if ($this->framedMessageTarget !== null) {
             $payload['framed_message_target'] = $this->framedMessageTarget;
+            unset($payload['return']);
         }
 
         return $payload;
@@ -240,13 +246,36 @@ class Paytabs
         }
     }
 
-    public function displayIFrame(): static
+    public function displayIFrame(string $returnTopOrParent = 'top'): static
     {
         $this->framed = true;
-        $this->framedReturnTop = true;
-        $this->framedReturnParent = true;
-        $this->framedMessageTarget = config('paytabs.iframe_message_target');;
+        if ($returnTopOrParent === 'top') {
+            $this->framedReturnTop = true;
+            $this->framedReturnParent = false;
+        } elseif ($returnTopOrParent === 'parent') {
+            $this->framedReturnParent = true;//return the message inside iframe
+            $this->framedReturnTop = false;//return the redirect url after payment processed
+        }
 
         return $this;
+    }
+
+    public function framedMessageTarget(string|null $framedMessageTarget)
+    {
+        /*
+        * "framed" is mandatory to use this field
+        *This parameter allows you to listen to an event (JS postMessage) after the payment is compacted
+        * to take the next action, for example, make a service side check to verify the transaction status
+        *  and then redirect the customer to the proper page success/failure, or even close the iFrame.
+        * <script type="text/javascript">
+   window.addEventListener("message", function(event){
+       if (event.data == 'hppDone' && event.origin == 'https://secure.paytabs.com'){
+           //make action
+       }
+   })
+</script>
+        * */
+        throw_if(!$this->framed, new Exception('The Framed Message Target must used with framed option true only.'));
+        $this->framedMessageTarget = $framedMessageTarget ?? $_SERVER['REQUEST_URI'];
     }
 }
