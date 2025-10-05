@@ -260,7 +260,7 @@ class Paytabs
         return $this;
     }
 
-    public function framedMessageTarget(string|null $framedMessageTarget)
+    public function framedMessageTarget(string|null $framedMessageTarget): static
     {
         /*
         * "framed" is mandatory to use this field
@@ -277,5 +277,6 @@ class Paytabs
         * */
         throw_if(!$this->framed, new Exception('The Framed Message Target must used with framed option true only.'));
         $this->framedMessageTarget = $framedMessageTarget ?? $_SERVER['REQUEST_URI'];
+        return $this;
     }
 }
