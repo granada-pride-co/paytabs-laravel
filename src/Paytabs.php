@@ -205,6 +205,7 @@ class Paytabs
             'framed' => $this->framed,
             'framed_return_top' => $this->framedReturnTop,
             'framed_return_parent' => $this->framedReturnParent,
+            'hide_shipping' => true,
             'return' => $this->returnUrl,
         ];
         if ($this->customerDetails) {
@@ -212,6 +213,7 @@ class Paytabs
         }
         if ($this->shippingDetails) {
             $payload['shipping_details'] = $this->getShipping();
+            $payload['hide_shipping'] = false;
         }
 
         if ($this->framedMessageTarget !== null) {
