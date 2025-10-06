@@ -31,7 +31,7 @@ class Paytabs
 
     protected string $paypageLang;
 
-    protected bool $hideShipping = false;
+    protected bool $hideShipping = true;
 
     protected bool $framed = false;
 
@@ -92,7 +92,7 @@ class Paytabs
     public function setShipping(CustomerDetails $details): static
     {
         $this->shippingDetails = $details;
-
+        $this->setHideShipping(false);
         return $this;
     }
 
@@ -135,18 +135,6 @@ class Paytabs
     public function setPaypageLang(string $paypageLang): static
     {
         $this->paypageLang = $paypageLang;
-
-        return $this;
-    }
-
-    public function getHideShipping(): bool
-    {
-        return $this->hideShipping;
-    }
-
-    public function setHideShipping(bool $hide): static
-    {
-        $this->hideShipping = $hide;
 
         return $this;
     }
@@ -205,7 +193,7 @@ class Paytabs
             'framed' => $this->framed,
             'framed_return_top' => $this->framedReturnTop,
             'framed_return_parent' => $this->framedReturnParent,
-            'hide_shipping' => true,
+            'hide_shipping' => $this->getHideShipping(),
             'return' => $this->returnUrl,
         ];
         if ($this->customerDetails) {
@@ -213,7 +201,6 @@ class Paytabs
         }
         if (isset($this->shippingDetails)) {
             $payload['shipping_details'] = $this->getShipping();
-            $payload['hide_shipping'] = false;
         }
 
         if ($this->framedMessageTarget !== null) {
@@ -222,6 +209,18 @@ class Paytabs
         }
 
         return $payload;
+    }
+
+    public function getHideShipping(): bool
+    {
+        return $this->hideShipping;
+    }
+
+    public function setHideShipping(bool $hide): static
+    {
+        $this->hideShipping = $hide;
+
+        return $this;
     }
 
     public function getCustomer(): array
