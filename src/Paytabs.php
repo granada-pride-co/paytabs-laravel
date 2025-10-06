@@ -23,7 +23,7 @@ class Paytabs
 
     protected CustomerDetails|null $customerDetails;
 
-    protected CustomerDetails|null $shippingDetails;
+    protected CustomerDetails|null $shippingDetails = null;
 
     protected string $callbackUrl;
 
