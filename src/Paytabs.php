@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use RuntimeException;
-use function LaravelIdea\throw_if;
 
 class Paytabs
 {
@@ -260,22 +259,27 @@ class Paytabs
         return $this;
     }
 
+    /**
+     * @throws Exception
+     */
     public function framedMessageTarget(string|null $framedMessageTarget): static
     {
         /*
         * "framed" is mandatory to use this field
         *This parameter allows you to listen to an event (JS postMessage) after the payment is compacted
-        * to take the next action, for example, make a service side check to verify the transaction status
+        * to take the next action. For example, make a service side check to verify the transaction status
         *  and then redirect the customer to the proper page success/failure, or even close the iFrame.
-        * <script type="text/javascript">
-   window.addEventListener("message", function(event){
-       if (event.data == 'hppDone' && event.origin == 'https://secure.paytabs.com'){
-           //make action
-       }
-   })
-</script>
+         <script type="text/javascript">
+           window.addEventListener("message", function(event){
+               if (event.data == 'hppDone' && event.origin == 'https://secure.paytabs.com'){
+                   //make action
+               }
+           })
+        </script>
         * */
-        throw_if(!$this->framed, new Exception('The Framed Message Target must used with framed option true only.'));
+        if (!$this->framed) {
+            throw new Exception('The Framed Message Target must used with framed option true only.');
+        }
         $this->framedMessageTarget = $framedMessageTarget ?? $_SERVER['REQUEST_URI'];
         return $this;
     }
