@@ -211,7 +211,7 @@ class Paytabs
         if ($this->customerDetails) {
             $payload['customer_details'] = $this->getCustomer();
         }
-        if ($this->shippingDetails) {
+        if (isset($this->shippingDetails)) {
             $payload['shipping_details'] = $this->getShipping();
             $payload['hide_shipping'] = false;
         }
